@@ -1,0 +1,52 @@
+pipeline {
+    agent any
+
+    environment {
+        PATH = "/opt/homebrew/bin:/opt/homebrew/opt/openjdk@21/bin:${env.PATH}"
+        JAVA_HOME = "/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                git branch: 'main',
+                        url: 'https://github.com/sudheer04k-ai/jenkins-practice-2.git'
+            }
+        }
+
+        stage('Environment Check') {
+            steps {
+                sh 'java -version'
+                sh 'mvn -version'
+            }
+        }
+
+        stage('Build & Test') {
+            steps {
+                sh 'mvn clean test'
+            }
+        }
+
+        stage('Publish Test Results') {
+            steps{
+                junit 'target/surefire-reports/junitreports/*.xml'
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'target/surefire-reports/**',
+                    allowEmptyArchive: true
+        }
+        success {
+             echo 'BUILD SUCCESSFUL'
+
+        }
+
+        failure {
+            echo 'BUILD FAILED - CHECK TEST RESULTS'
+        }
+    }
+}
